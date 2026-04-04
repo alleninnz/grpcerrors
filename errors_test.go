@@ -25,10 +25,10 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestNewf(t *testing.T) {
-	err := Newf(codes.FailedPrecondition, "HOLDINGS_EXIST", "d", "fund %d has %d holdings", 1, 5)
-	if err.Message != "fund 1 has 5 holdings" {
-		t.Errorf("Message = %q, want %q", err.Message, "fund 1 has 5 holdings")
+func TestNew_EmptyMessageDefaultsToReason(t *testing.T) {
+	err := New(codes.NotFound, "FUND_NOT_FOUND", "d", "")
+	if err.Message != "FUND_NOT_FOUND" {
+		t.Errorf("Message = %q, want %q (should default to reason)", err.Message, "FUND_NOT_FOUND")
 	}
 }
 
@@ -40,7 +40,7 @@ func TestError_Error(t *testing.T) {
 }
 
 func TestError_GRPCStatus(t *testing.T) {
-	err := Newf(codes.FailedPrecondition, "HOLDINGS_EXIST", "jasper.admin.investment.v0", "fund 42").
+	err := New(codes.FailedPrecondition, "HOLDINGS_EXIST", "jasper.admin.investment.v0", "fund 42").
 		WithMetadata(map[string]string{"fund_id": "42"})
 
 	s := err.GRPCStatus()
@@ -73,7 +73,7 @@ func TestError_GRPCStatus(t *testing.T) {
 }
 
 func TestFromError_RoundTrip(t *testing.T) {
-	original := Newf(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund 42").
+	original := New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund 42").
 		WithMetadata(map[string]string{"id": "42"})
 
 	restored := FromError(original.GRPCStatus().Err())
@@ -111,7 +111,7 @@ func TestFromError_Nil(t *testing.T) {
 }
 
 func TestMatchReasonDomain(t *testing.T) {
-	err := Newf(codes.NotFound, "NOT_FOUND", "service.a", "msg")
+	err := New(codes.NotFound, "NOT_FOUND", "service.a", "msg")
 
 	if !MatchReasonDomain(err, "NOT_FOUND", "service.a") {
 		t.Error("should match same reason+domain")
@@ -128,7 +128,7 @@ func TestMatchReasonDomain(t *testing.T) {
 }
 
 func TestMatchReasonDomain_RawGRPCStatus(t *testing.T) {
-	original := Newf(codes.NotFound, "NOT_FOUND", "service.a", "msg")
+	original := New(codes.NotFound, "NOT_FOUND", "service.a", "msg")
 	rawStatusErr := original.GRPCStatus().Err()
 
 	if !MatchReasonDomain(rawStatusErr, "NOT_FOUND", "service.a") {
@@ -140,7 +140,7 @@ func TestMatchReasonDomain_RawGRPCStatus(t *testing.T) {
 }
 
 func TestReason_RawGRPCStatus(t *testing.T) {
-	original := Newf(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
+	original := New(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
 	rawStatusErr := original.GRPCStatus().Err()
 
 	if got := Reason(rawStatusErr); got != "FUND_NOT_FOUND" {
@@ -149,7 +149,7 @@ func TestReason_RawGRPCStatus(t *testing.T) {
 }
 
 func TestCode_RawGRPCStatus(t *testing.T) {
-	original := Newf(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
+	original := New(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
 	rawStatusErr := original.GRPCStatus().Err()
 
 	if got := Code(rawStatusErr); got != codes.NotFound {
@@ -158,7 +158,7 @@ func TestCode_RawGRPCStatus(t *testing.T) {
 }
 
 func TestReason(t *testing.T) {
-	err := Newf(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
+	err := New(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
 	if got := Reason(err); got != "FUND_NOT_FOUND" {
 		t.Errorf("Reason = %q, want FUND_NOT_FOUND", got)
 	}
@@ -168,7 +168,7 @@ func TestReason(t *testing.T) {
 }
 
 func TestCode(t *testing.T) {
-	err := Newf(codes.NotFound, "R", "d", "msg")
+	err := New(codes.NotFound, "R", "d", "msg")
 	if got := Code(err); got != codes.NotFound {
 		t.Errorf("Code = %v, want NotFound", got)
 	}
@@ -178,7 +178,7 @@ func TestCode(t *testing.T) {
 }
 
 func TestWithMetadata(t *testing.T) {
-	err := Newf(codes.NotFound, "R", "d", "msg")
+	err := New(codes.NotFound, "R", "d", "msg")
 	ret := err.WithMetadata(map[string]string{"k": "v"})
 	if ret == err {
 		t.Error("WithMetadata should return a new *Error, not mutate the original")
@@ -193,7 +193,7 @@ func TestWithMetadata(t *testing.T) {
 
 func TestWithMetadata_DeepCopy(t *testing.T) {
 	md := map[string]string{"k": "v"}
-	err := Newf(codes.NotFound, "R", "d", "msg").WithMetadata(md)
+	err := New(codes.NotFound, "R", "d", "msg").WithMetadata(md)
 	md["k"] = "mutated"
 	if err.Metadata["k"] != "v" {
 		t.Error("WithMetadata should deep-copy the map; caller mutation leaked in")
@@ -201,10 +201,10 @@ func TestWithMetadata_DeepCopy(t *testing.T) {
 }
 
 func TestIs(t *testing.T) {
-	a := Newf(codes.NotFound, "X", "d", "m1")
-	b := Newf(codes.Internal, "X", "d", "m2")
-	c := Newf(codes.NotFound, "Y", "d", "m1")
-	d := Newf(codes.NotFound, "X", "other-domain", "m1")
+	a := New(codes.NotFound, "X", "d", "m1")
+	b := New(codes.Internal, "X", "d", "m2")
+	c := New(codes.NotFound, "Y", "d", "m1")
+	d := New(codes.NotFound, "X", "other-domain", "m1")
 
 	if !errors.Is(a, b) {
 		t.Error("errors.Is should match same reason+domain even with different codes")

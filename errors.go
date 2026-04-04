@@ -2,7 +2,6 @@ package grpcerrors
 
 import (
 	"errors"
-	"fmt"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -23,23 +22,16 @@ type Error struct {
 	Metadata map[string]string
 }
 
-// New creates an *Error with a static message.
+// New creates an *Error. If msg is empty, the reason is used as the message.
 func New(code codes.Code, reason, domain, msg string) *Error {
+	if msg == "" {
+		msg = reason
+	}
 	return &Error{
 		GRPCCode: code,
 		Reason:   reason,
 		Domain:   domain,
 		Message:  msg,
-	}
-}
-
-// Newf creates an *Error with a formatted message.
-func Newf(code codes.Code, reason, domain, format string, args ...any) *Error {
-	return &Error{
-		GRPCCode: code,
-		Reason:   reason,
-		Domain:   domain,
-		Message:  fmt.Sprintf(format, args...),
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 )
 
 func TestUnaryClientInterceptor_ReconstitutesError(t *testing.T) {
-	original := Newf(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
+	original := New(codes.NotFound, "FUND_NOT_FOUND", "d", "msg")
 	interceptor := UnaryClientInterceptor()
 
 	err := interceptor(context.Background(), "/test", nil, nil, nil,
@@ -58,7 +58,7 @@ func TestUnaryClientInterceptor_PassesNil(t *testing.T) {
 }
 
 func TestStreamClientInterceptor_PassesStreamerError(t *testing.T) {
-	original := Newf(codes.Unavailable, "SERVICE_DOWN", "d", "msg")
+	original := New(codes.Unavailable, "SERVICE_DOWN", "d", "msg")
 	interceptor := StreamClientInterceptor()
 
 	_, err := interceptor(context.Background(), &grpc.StreamDesc{}, nil, "/test",
@@ -99,7 +99,7 @@ func (m *mockStream) CloseSend() error {
 }
 
 func TestStreamClientInterceptor_RecvMsgReconstitutes(t *testing.T) {
-	original := Newf(codes.FailedPrecondition, "HOLDINGS_EXIST", "d", "msg")
+	original := New(codes.FailedPrecondition, "HOLDINGS_EXIST", "d", "msg")
 	interceptor := StreamClientInterceptor()
 
 	stream, err := interceptor(context.Background(), &grpc.StreamDesc{}, nil, "/test",
@@ -118,7 +118,7 @@ func TestStreamClientInterceptor_RecvMsgReconstitutes(t *testing.T) {
 }
 
 func TestStreamClientInterceptor_SendMsgReconstitutes(t *testing.T) {
-	original := Newf(codes.FailedPrecondition, "FUND_LOCKED", "d", "msg")
+	original := New(codes.FailedPrecondition, "FUND_LOCKED", "d", "msg")
 	interceptor := StreamClientInterceptor()
 
 	stream, err := interceptor(context.Background(), &grpc.StreamDesc{}, nil, "/test",
@@ -137,7 +137,7 @@ func TestStreamClientInterceptor_SendMsgReconstitutes(t *testing.T) {
 }
 
 func TestStreamClientInterceptor_HeaderReconstitutes(t *testing.T) {
-	original := Newf(codes.Unauthenticated, "TOKEN_EXPIRED", "d", "msg")
+	original := New(codes.Unauthenticated, "TOKEN_EXPIRED", "d", "msg")
 	interceptor := StreamClientInterceptor()
 
 	stream, err := interceptor(context.Background(), &grpc.StreamDesc{}, nil, "/test",
@@ -156,7 +156,7 @@ func TestStreamClientInterceptor_HeaderReconstitutes(t *testing.T) {
 }
 
 func TestStreamClientInterceptor_CloseSendReconstitutes(t *testing.T) {
-	original := Newf(codes.Unavailable, "STREAM_CLOSED", "d", "msg")
+	original := New(codes.Unavailable, "STREAM_CLOSED", "d", "msg")
 	interceptor := StreamClientInterceptor()
 
 	stream, err := interceptor(context.Background(), &grpc.StreamDesc{}, nil, "/test",

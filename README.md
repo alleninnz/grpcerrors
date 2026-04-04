@@ -13,15 +13,16 @@ go get github.com/JasperLabs/grpcerrors
 ### Creating errors
 
 ```go
-// Static message
+// With message
 err := grpcerrors.New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund not found")
 
-// Formatted message
-err := grpcerrors.Newf(codes.FailedPrecondition, "HOLDINGS_EXIST", "jasper.admin.investment.v0", "fund %d has %d holdings", fundID, count)
+// Empty message defaults to reason string
+err := grpcerrors.New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "")
+// err.Message == "FUND_NOT_FOUND"
 
 // With metadata
-err := grpcerrors.Newf(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund %d", fundID).
-    WithMetadata(map[string]string{"fund_id": strconv.Itoa(fundID)})
+err := grpcerrors.New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund 42").
+    WithMetadata(map[string]string{"fund_id": "42"})
 ```
 
 ### Checking errors
@@ -62,8 +63,7 @@ The interceptors wrap all error-returning stream methods (`RecvMsg`, `SendMsg`, 
 
 | Function | Description |
 |---|---|
-| `New(code, reason, domain, msg)` | Create error with static message |
-| `Newf(code, reason, domain, format, args...)` | Create error with formatted message |
+| `New(code, reason, domain, msg)` | Create error (empty msg defaults to reason) |
 | `FromError(err)` | Extract `*Error` from gRPC status (nil if no ErrorInfo) |
 | `MatchReasonDomain(err, reason, domain)` | Check reason + domain match |
 | `Reason(err)` | Get reason string |
