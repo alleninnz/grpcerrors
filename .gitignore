@@ -1,0 +1,14 @@
+# IDE
+.vscode/
+.cursor/
+.idea/
+.claude/
+
+# Build
+/protoc-gen-go-errors
+
+# OS
+.DS_Store
+
+# OpenSpec
+openspec/

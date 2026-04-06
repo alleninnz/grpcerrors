@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package test.v1;
+
+option go_package = "github.com/JasperLabs/protoc-gen-go-errors/testdata/testv1";
+
+import "errors/errors.proto";
+
+enum ErrorReason {
+  // Zero value — should be skipped even with annotation.
+  ERROR_REASON_INVALID = 0 [(errors.grpc_code) = FAILED_PRECONDITION];
+
+  // Annotated values — should generate code.
+  HOLDINGS_EXIST = 1 [(errors.grpc_code) = FAILED_PRECONDITION];
+  FUND_NOT_FOUND = 2 [(errors.grpc_code) = NOT_FOUND];
+  EMAIL_ALREADY_EXISTS = 3 [(errors.grpc_code) = ALREADY_EXISTS];
+  DISTRIBUTION_ALREADY_CONFIRMED = 4 [(errors.grpc_code) = FAILED_PRECONDITION];
+
+  // Unannotated value — should be skipped.
+  UNANNOTATED_VALUE = 99;
+}

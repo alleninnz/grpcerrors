@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package test.dup;
+
+option go_package = "github.com/JasperLabs/protoc-gen-go-errors/testdata/testdup";
+
+import "errors/errors.proto";
+
+// Two enums nested inside different messages can have the same value name.
+// Both produce ErrorNotFound/IsNotFound — a PascalCase collision.
+message FundRequest {
+  enum ErrorReason {
+    ERROR_REASON_INVALID = 0;
+    NOT_FOUND = 1 [(errors.grpc_code) = NOT_FOUND];
+  }
+}
+
+message AccountRequest {
+  enum ErrorReason {
+    ERROR_REASON_INVALID = 0;
+    NOT_FOUND = 1 [(errors.grpc_code) = NOT_FOUND];
+  }
+}

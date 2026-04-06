@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package test.v1;
+
+option go_package = "github.com/JasperLabs/protoc-gen-go-errors/testdata/testv1";
+
+// A proto file with only a message — no annotated enums.
+// The plugin should produce no output for this file.
+message SomeRequest {
+  string id = 1;
+}

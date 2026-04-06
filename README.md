@@ -1,74 +1,78 @@
 # grpcerrors
 
-Runtime library for type-safe gRPC error handling in Go. Pairs with [protoc-gen-go-errors](https://github.com/JasperLabs/protoc-gen-go-errors) to provide generated error constructors and checkers.
+Type-safe gRPC error handling: runtime library + codegen plugin.
 
 ## Install
 
 ```bash
 go get github.com/JasperLabs/grpcerrors
+go install github.com/JasperLabs/grpcerrors/cmd/protoc-gen-go-errors@latest
 ```
 
-## Usage
+## Plugin usage
 
-### Creating errors
+Define errors in proto with `(errors.grpc_code)` annotations:
+
+```protobuf
+import "errors/errors.proto";
+
+enum ErrorReason {
+  ERROR_REASON_INVALID = 0;
+  FUND_NOT_FOUND       = 1 [(errors.grpc_code) = NOT_FOUND];
+  HOLDINGS_EXIST       = 2 [(errors.grpc_code) = FAILED_PRECONDITION];
+}
+```
+
+Add to `buf.gen.yaml`:
+
+```yaml
+- local: protoc-gen-go-errors
+  out: .
+  opt: paths=source_relative
+```
+
+Consumer repos need `errors.proto` available at compile time. Add this repo's `proto/` directory as a protoc include path:
+
+```bash
+protoc -I path/to/grpcerrors/proto your_errors.proto
+```
+
+Generated output:
 
 ```go
-// With message
-err := grpcerrors.New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund not found")
-
-// Empty message defaults to reason string
-err := grpcerrors.New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "")
-// err.Message == "FUND_NOT_FOUND"
-
-// With metadata
-err := grpcerrors.New(codes.NotFound, "FUND_NOT_FOUND", "jasper.admin.investment.v0", "fund 42").
-    WithMetadata(map[string]string{"fund_id": "42"})
+func ErrorFundNotFound(msg ...string) *grpcerrors.Error  // create
+func IsFundNotFound(err error) bool                      // check
 ```
 
-### Checking errors
-
-```go
-// Match by reason + domain
-if grpcerrors.MatchReasonDomain(err, "FUND_NOT_FOUND", "jasper.admin.investment.v0") { ... }
-
-// Accessors
-reason := grpcerrors.Reason(err)   // "FUND_NOT_FOUND" or ""
-code := grpcerrors.Code(err)       // codes.NotFound or codes.Unknown
-```
-
-### Wire format
-
-`*Error` implements `GRPCStatus()` — gRPC-Go automatically converts it to a status with:
-- gRPC status code and message
-- `google.rpc.ErrorInfo` detail carrying `reason`, `domain`, and `metadata`
-
-No server-side interceptor needed.
-
-### Client interceptor
-
-Reconstitutes `*Error` from gRPC status details on the receiving side:
-
-```go
-conn, _ := grpc.Dial(addr,
-    grpc.WithChainUnaryInterceptor(grpcerrors.UnaryClientInterceptor()),
-    grpc.WithChainStreamInterceptor(grpcerrors.StreamClientInterceptor()),
-)
-```
-
-The interceptors wrap all error-returning stream methods (`RecvMsg`, `SendMsg`, `Header`, `CloseSend`).
-
-`MatchReasonDomain` and other accessors also work on raw gRPC status errors without the interceptor — they extract `ErrorInfo` on the fly.
-
-## API
+## Runtime API
 
 | Function | Description |
 |---|---|
-| `New(code, reason, domain, msg)` | Create error (empty msg defaults to reason) |
-| `FromError(err)` | Extract `*Error` from gRPC status (nil if no ErrorInfo) |
-| `MatchReasonDomain(err, reason, domain)` | Check reason + domain match |
-| `Reason(err)` | Get reason string |
-| `Code(err)` | Get gRPC code |
-| `(*Error).WithMetadata(md)` | Return copy with metadata (immutable) |
-| `(*Error).GRPCStatus()` | Convert to gRPC status with ErrorInfo detail |
+| `New(code, reason, domain, msg)` | Create error |
+| `FromError(err)` | Extract from gRPC status |
+| `MatchReasonDomain(err, reason, domain)` | Check match |
+| `Reason(err)` / `Code(err)` | Accessors |
+| `(*Error).WithMetadata(md)` | Attach metadata |
+| `(*Error).GRPCStatus()` | Convert to gRPC status with ErrorInfo |
 | `UnaryClientInterceptor()` | Unary client interceptor |
 | `StreamClientInterceptor()` | Stream client interceptor |
+
+## Development
+
+```bash
+make build    # Build runtime + plugin
+make test     # Run all tests
+make protoc   # Regenerate errors.pb.go
+make install  # Install plugin to $GOPATH/bin
+```
+
+## Structure
+
+```
+├── errors.go, interceptor.go        # Runtime
+├── errors.pb.go                     # Extension registration (generated)
+├── proto/errors/errors.proto        # Extension definition (consumer include root)
+├── cmd/protoc-gen-go-errors/        # Codegen plugin
+│   └── testdata/                    # Golden test fixtures
+└── go.mod                           # Single module
+```

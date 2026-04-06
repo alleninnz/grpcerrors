@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package test.v1;
+
+option go_package = "github.com/JasperLabs/protoc-gen-go-errors/testdata/testv1";
+
+import "errors/errors.proto";
+
+message DeleteFundRequest {
+  string fund_id = 1;
+
+  // Enum nested inside a message — plugin must still generate helpers.
+  enum ErrorReason {
+    ERROR_REASON_INVALID = 0;
+    FUND_HAS_HOLDINGS = 1 [(errors.grpc_code) = FAILED_PRECONDITION];
+    FUND_HAS_OFFERS = 2 [(errors.grpc_code) = FAILED_PRECONDITION];
+  }
+}

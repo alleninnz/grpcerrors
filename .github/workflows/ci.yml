@@ -32,6 +32,9 @@ jobs:
           go-version-file: ${{ env.GO_VERSION_FILE }}
           cache: true
 
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
       - name: Verify go.mod is tidy
         run: |
           go mod tidy

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package errors;
+
+option go_package = "github.com/JasperLabs/grpcerrors;grpcerrors";
+
+import "google/protobuf/descriptor.proto";
+import "google/rpc/code.proto";
+
+extend google.protobuf.EnumValueOptions {
+  google.rpc.Code grpc_code = 50001;
+}
